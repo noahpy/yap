@@ -29,7 +29,7 @@ do
   name=$(echo $line | awk -F' ' '{print $2}')
 
   # If name is not given, take title of the video
-  [ "$name" == '' ] && name=$(curl -Ls "https://invidious.13ad.de/watch?v=$id" | awk -F\" '/"title":/{ print $4 }')
+  [ "$name" == '' ] && name=$(curl -Ls "https://invidious.13ad.de/watch?v=$id" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs)
 
   # Skip loop element, when file already exists
   [ -f finish/"$name".m4a ] && echo -e "Skipping \"$name\", because it already exists" && continue
