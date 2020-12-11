@@ -40,7 +40,6 @@ do
   curl -Ls "$invidous/latest_version?id=$id&itag=251" -o "$tmp/$name.webm"
   RC=$(echo $?)
   echo -e "=====================\ncurl audio: $RC\n====================="
-  echo "$invidous/latest_version?id=$id&itag=251"
 
   # get cover image
   [ $RC -eq 0 ] && curl -Ls "$invidous/vi/$id/maxres.jpg" -o "$tmp/$name-cover.jpg"
