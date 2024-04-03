@@ -1,5 +1,5 @@
 # yt-audio-downloader
-Downloads the audio of YouTube videos by getting them from a invidious instance. Also adds the cover image.
+Downloads the .m4a audio of YouTube videos by getting them from a invidious instance. Also adds the cover image.
 
 ### Dependencies
 - curl
