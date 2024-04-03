@@ -9,9 +9,12 @@
 # If filename is not given, the title of the Video is taken
 
 # invidious instance
-invidous=https://invidious.13ad.de
+invidious=https://yt.artemislena.eu
 # temporary files path
 tmp='/tmp/yt-download'
+
+# itag for lowest quality m4a (https://gist.github.com/sidneys/7095afe4da4ae58694d128b1034e01e2)
+itag=139
 
 mkdir -p "$tmp" finish
 
@@ -29,38 +32,32 @@ do
   name=$(echo $line | awk -F' ' '{print $2}')
 
   # If name is not given, take title of the video
-  [ "$name" == '' ] && name=$(curl -Ls "https://invidious.13ad.de/watch?v=$id" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs)
+  [ "$name" == '' ] && name=$(curl -Ls "$invidious/watch?v=$id" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs)
 
   # Skip loop element, when file already exists
   [ -f finish/"$name".m4a ] && echo -e "Skipping \"$name\", because it already exists" && continue
 
-  echo -e "=====================\nname=$name\n====================="
+  echo -e "name=$name"
 
-  # get audio .webm
-  curl -Ls "$invidous/latest_version?id=$id&itag=251" -o "$tmp/$name.webm"
+  # get audio .m4a
+  curl -Ls "$invidious/latest_version?id=$id&itag=$itag" -o "$tmp/$name.m4a"
   RC=$(echo $?)
-  echo -e "=====================\ncurl audio: $RC\n====================="
+  echo -e "curl audio: $RC" 
 
   # get cover image
-  [ $RC -eq 0 ] && curl -Ls "$invidous/vi/$id/maxres.jpg" -o "$tmp/$name-cover.jpg"
+  [ $RC -eq 0 ] && curl -Ls "$invidious/vi/$id/maxres.jpg" -o "$tmp/$name-cover.jpg"
   RC=$(echo $?)
-  echo -e "=====================\ncurl picture: $RC\n====================="
-
-  # convert to m4a
-  [ $RC -eq 0 ] && (ffmpeg -nostdin -i "$tmp/$name.webm" -vn "$tmp/$name.m4a") 2> /dev/null
-  RC=$(echo $?)
-  echo -e "=====================\nffmpeg convert to m4a: $RC\n====================="
+  echo -e "curl picture: $RC" 
 
   # insert image to audio
-  [ $RC -eq 0 ] && (ffmpeg -nostdin -i "$tmp/$name.m4a" -i "$tmp/$name-cover.jpg" -map 0:0 -map 1:0 -acodec copy -id3v2_version 3 "finish/$name.m4a") 2> /dev/null
-  echo -e "=====================\nffmpeg put image in m4a: $?\n====================="
+  [ $RC -eq 0 ] && (ffmpeg -nostdin -i "finish/$name.m4a" -i "$tmp/$name-cover.jpg" -map 0:0 -map 1:0 -acodec copy -id3v2_version 3 "finish/$name.m4a") 2> /dev/null
+  echo -e "ffmpeg put image in m4a: $?"
 
   # remove temporary files
   [ -f "$tmp/$name-cover.jpg" ] && rm "$tmp/$name-cover.jpg"
-  [ -f "$tmp/$name.webm" ] && rm "$tmp/$name.webm"
   [ -f "$tmp/$name.m4a" ] && rm "$tmp/$name.m4a"
 
-  echo -e "=====================\nrm temporary directory: $?\n====================="
+  echo -e "rm temporary files: $?" 
 done < $list
 
 [ -f "$tmp" ] && rmdir "$tmp"
