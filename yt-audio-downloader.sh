@@ -24,9 +24,19 @@ list=$1
 while read line;
 do
   link=$(echo $line | awk -F' ' '{print $1}')
-  id=$(echo $link | sed -e 's/^.*\.com\/watch?v=//' -e 's/\&.*$//')
+
+  # forward link to ensure parameter is in link (also work with bit.ly links)
+  if [[ $link != *".com"* ]]; then
+    link=$(echo $(curl -Ls -o /dev/null -w %{url_effective} $link))
+  fi
+
+  # extract video id from link
+  id=$(echo $link | sed -n 's/.*[?&]v=\([^&]*\).*/\1/p')
+
+
   # Vanced only uses 11 characters for their ids
   id=${id:0:11}
+
 
   # Get given Name
   name=$(echo $line | awk -F' ' '{print $2}')
@@ -40,6 +50,7 @@ do
   echo -e "name=$name"
 
   # get audio .m4a
+  echo "$invidious/latest_version?id=$id&itag=$itag"
   curl -Ls "$invidious/latest_version?id=$id&itag=$itag" -o "$tmp/$name.m4a"
   RC=$(echo $?)
   echo -e "curl audio: $RC" 
@@ -50,8 +61,9 @@ do
   echo -e "curl picture: $RC" 
 
   # insert image to audio
-  [ $RC -eq 0 ] && (ffmpeg -nostdin -i "finish/$name.m4a" -i "$tmp/$name-cover.jpg" -map 0:0 -map 1:0 -acodec copy -id3v2_version 3 "finish/$name.m4a") 2> /dev/null
+  [ $RC -eq 0 ] && (ffmpeg -nostdin -i "$tmp/$name.m4a" -i "$tmp/$name-cover.jpg" -map 0:0 -map 1:0 -acodec copy -id3v2_version 3 "finish/$name.m4a") 2> /dev/null
   echo -e "ffmpeg put image in m4a: $?"
+
 
   # remove temporary files
   [ -f "$tmp/$name-cover.jpg" ] && rm "$tmp/$name-cover.jpg"
