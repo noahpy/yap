@@ -84,5 +84,4 @@ yap(){
     [ -f "$tmp" ] && rmdir "$tmp"
 }
 
-yap
 
