@@ -1,23 +1,14 @@
 #!/bin/bash
 
-# run like following:
-# $ bash yt-downloader.sh youtubelist.txt
-# where youtubelist is of the following structure:
-# youtubelink1 filename1
-# youtubelink2 filename2
-# If filename is not given, the title of the Video is taken
-
-
 
 ### GLOBAL VARIABLES ###
 # invidious instance
 invidious=https://yt.artemislena.eu
 # temporary files path
 tmp='/tmp/yt-download'
-# itag for lowest quality m4a (see https://gist.github.com/sidneys/7095afe4da4ae58694d128b1034e01e2)
-itag=139
 
 
+# Download .m4a of specified video
 audio_download_invidious(){
     name=$1
     id=$2
@@ -61,10 +52,62 @@ get_invidious_audio_search_id(){
     echo $result
 }
 
+is_valid_url(){
+    regex='(https?|ftp|file)://[-[:alnum:]\+&@#/%?=~_|!:,.;]*[-[:alnum:]\+&@#/%=~_|]'
+    if [[ $string =~ $regex ]]
+    then 
+        echo "1"
+    else
+        echo "0"
+    fi
+}
 
 yap(){
+    
+    LONGOPTS="itag:,save-images"
+    OPTIONS="i:,s"
+
+    ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
+    if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+        # e.g. return value is 1
+        #  then getopt has complained about wrong arguments to stdout
+        exit 2
+    fi
+    # read getopt’s output
+    eval set -- "$PARSED"
+
+    # itag for lowest quality m4a (see https://gist.github.com/sidneys/7095afe4da4ae58694d128b1034e01e2)
+    itag=139
+
+    saveImages=false
+
+    while true; do
+        case "$1" in
+            -s|--save-images)
+                saveImages=true
+                shift
+                ;;
+            -i|--itag)
+                itag="$2"
+                shift 2
+                ;;
+            --)
+                shift
+                break
+                ;;
+            *)
+                echo "Programming error"
+                return 3
+                ;;
+        esac
+    done
+
     mkdir -p "$tmp" finish
 
+    if [[ $# -ne 1 ]]; then
+        echo "yap: A single input file is required."
+        return 4
+    fi
     list=$1
 
     while read line;
@@ -99,5 +142,4 @@ yap(){
 
     [ -f "$tmp" ] && rmdir "$tmp"
 }
-
 
