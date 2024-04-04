@@ -46,6 +46,22 @@ audio_download_invidious(){
 }
 
 
+# Function to remove quotes and concatenate strings with '+'
+concatenate_with_plus() {
+    input="$1"
+    # Remove single and double quotes, then replace spaces with '+'
+    result=$(echo "$input" | awk -v RS="[\"']" '{gsub(/ /, "+", $0); printf "%s", $0}')
+    echo "$result"
+}
+
+# Get the ID of the first search result on Invidious
+get_invidious_audio_search_id(){
+    search="$1"
+    result=$(wget -nv -qO - "$invidious/search?q=$search+Audio" | grep "watch?v=" | head -n1 | sed -n 's/.*[?&]v=\([^"]*\).*/\1/p')
+    echo $result
+}
+
+
 yap(){
     mkdir -p "$tmp" finish
 
