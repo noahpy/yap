@@ -1,24 +1,38 @@
 # YAP (Youtube Audio Puller)
-Downloads the .m4a audio of YouTube videos by getting them from a invidious instance. Also adds the cover image.
+Download Audio from Invidious by link or automatic search by song name.
 
 ### Dependencies
 - curl
 - ffmpeg
 
 ### Setup
-Clone this repository, then source yap.sh in your .bashrc / .zshrc equivalent.
+Clone this repository, then run:
 ```
-source yap.sh
+echo "source $(pwd)/yap.sh" >> ~/.bashrc
 ```
+Replace .bashrc with your equivalent shell file.
 
 ### Usage
-Create a list with YouTube links and the wished filename without space in the name. 
-Such as:
+Download from link (any link pointing to a YouTube / Invidious video):
 ```
-https://www.youtube.com/watch?v=zRSkjMPFggs after-laughter_argatu(remix)
-https://www.youtube.com/watch?v=fkV9SH8IYoo wolf-totem_the-hu
+yap [LINK]
 ```
-Call with:
+Download by search:
 ```
-yap youtubelist.txt
+yap [SONG]
 ```
+Download by search with additional info:
+```
+yap [SONG] -p [ARTIST] -a [ALBUM]
+```
+Include cover into downloaded audio file:
+```
+yap [LINK/SONG] -c
+```
+Automatically edit audio tags with given info (TBD):
+```
+yap [LINK/SONG] -t
+```
+
+
+
