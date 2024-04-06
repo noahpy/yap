@@ -13,7 +13,7 @@ Usage: yap [OPTIONS] [LINK/SONG_NAME]
 Download audio from YouTube using Invidious.
 
 Options:
-  -l, --link=LINK         Provide any link pointing to a YouTube video for download.
+  -l, --link=LINK         Provide any link pointing to a YouTube / Invidious video for download.
   -s, --song=SONG_NAME    Search and download by specifying the song name.
   -a, --album=ALBUM       Specify the album name (optional for search).
   -p, --artist=ARTIST     Specify the artist name (optional for search).
@@ -22,7 +22,9 @@ Options:
   -c, --cover             Include cover image in the downloaded audio file.
   -t, --tag               Include metadata tags in the downloaded audio file.
   -r, --replace           Replace existing files if they have the same name.
+      --play=COMMAND      Execute COMMAND AUDIO_FILE after finished download.
   -h, --help              Show this help message.
+
   
 Examples:
   yap https://www.youtube.com/watch?v=VIDEO_ID
@@ -120,7 +122,7 @@ is_valid_url(){
 
 yap(){
     
-    LONGOPTS="itag:,cover,link:,song:,album:,artist:,tag,output:,replace,help"
+    LONGOPTS="itag:,cover,link:,song:,album:,artist:,tag,output:,replace,help,play:"
     OPTIONS="i:,c,l:,s:,a:,p:,t,o:,r,h"
 
     ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
@@ -143,6 +145,7 @@ yap(){
     album=''
     artist=''
     output='finish'
+    play=''
 
     while true; do
         case "$1" in
@@ -176,7 +179,6 @@ yap(){
                 ;;
             -o|--output)
                 output="$2"
-                mkdir "$output"
                 shift 2
                 ;;
             -t|--tag)
@@ -186,6 +188,10 @@ yap(){
             -r|--replace)
                 replace=true
                 shift
+                ;;
+            --play)
+                play="$2"
+                shift 2
                 ;;
             --)
                 shift
@@ -198,7 +204,8 @@ yap(){
         esac
     done
 
-    mkdir -p "$tmp" finish
+    mkdir -p "$tmp" "$output"
+
 
     if [[ $# -ne 1 && "$link" == '' && "$song" == '' ]]; then
         echo "yap: You need to specify at least a link or a song name!"
@@ -213,7 +220,6 @@ yap(){
     if [[ "$link" != '' ]]; then
         id=$(get_link_audio_id $link)
     else
-        song=$positional
         search=$positional
         if [[ "$artist" != '' ]]; then
             search="$search $artist"
@@ -230,7 +236,7 @@ yap(){
     name="$song"
 
     # If name is not given, take title of the video
-    [ "$name" == '' ] && name=$(curl -Ls "$invidious/watch?v=$id" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs)
+    [ "$name" == '' ] && name=$(curl -Ls "$invidious/watch?v=$id" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs) && echo "Found title: $name"
 
     # Skip loop element, when file already exists
     if [[ -f "$output/$name".m4a && "$replace" == "false" ]]; then
@@ -240,5 +246,9 @@ yap(){
     audio_download_invidious "$name" "$id" "$itag" "$thumbImage" "$output"
 
     [ -f "$tmp" ] && rmdir "$tmp"
+
+    if [[ "$play" != '' ]]; then
+        $play "$output/$name.m4a"
+    fi
 }
 
