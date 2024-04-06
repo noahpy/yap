@@ -13,27 +13,34 @@ audio_download_invidious(){
     name=$1
     id=$2
     itag=$3
+    thumbnail=$4 
+    output=$5
     echo "Curling $name from: $invidious/latest_version?id=$id&itag=$itag"
     curl -Ls "$invidious/latest_version?id=$id&itag=$itag" -o "$tmp/$name.m4a"
     RC=$(echo $?)
     if [ $RC -ne 0 ]; then
         echo "Could not curl audio!"
+        return 1
     fi
 
     # get cover image
-    [ $RC -eq 0 ] && curl -Ls "$invidious/vi/$id/maxres.jpg" -o "$tmp/$name-cover.jpg"
-    RC=$(echo $?)
-    if [ $RC -ne 0 ]; then
-        echo "Could not curl thumbnail!"
-    fi
+    if [[ "$thumbnail" == "true" ]]; then
+        [ $RC -eq 0 ] && curl -Ls "$invidious/vi/$id/maxres.jpg" -o "$tmp/$name-cover.jpg"
+        RC=$(echo $?)
+        if [ $RC -ne 0 ]; then
+            echo "Could not curl thumbnail!"
+        fi
 
-    # insert image to audio
-    [ $RC -eq 0 ] && (ffmpeg -nostdin -i "$tmp/$name.m4a" -i "$tmp/$name-cover.jpg" -map 0:0 -map 1:0 -acodec copy -id3v2_version 3 "finish/$name.m4a") 2> /dev/null
-    if [ $RC -ne 0 ]; then
-        echo "Could add thumbnail to audio!"
-        cp "$tmp/$name.m4a" "finish/$name.m4a"
+        # insert image to audio
+        [ $RC -eq 0 ] && (ffmpeg -nostdin -i "$tmp/$name.m4a" -i "$tmp/$name-cover.jpg" -map 0:0 -map 1:0 -acodec copy -id3v2_version 3 "finish/$name.m4a") 2> /dev/null
+        if [ $RC -ne 0 ]; then
+            echo "Could add thumbnail to audio!"
+            cp "$tmp/$name.m4a" "$output/$name.m4a"
+        fi
+    else
+        cp "$tmp/$name.m4a" "$output/$name.m4a"
     fi
-
+    
 }
 
 
@@ -45,6 +52,15 @@ concatenate_with_plus() {
     echo "$result"
 }
 
+# Function to remove quotes and concatenate strings with '_'
+concatenate_with_underscore() {
+    input="$1"
+    # Remove single and double quotes, then replace spaces with '+'
+    result=$(echo "$input" | awk -v RS="[\"']" '{gsub(/ /, "_", $0); printf "%s", $0}')
+    echo "$result"
+}
+
+
 # Get the ID of the first search result on Invidious
 get_invidious_audio_search_id(){
     search="$1"
@@ -52,9 +68,25 @@ get_invidious_audio_search_id(){
     echo $result
 }
 
+# Get ID out of given link
+get_link_audio_id(){
+    link=$1
+    # forward link to ensure parameter is in link (also work with bit.ly links)
+    if [[ $link != *"watch?v="* ]]; then
+        link=$(echo $(curl -Ls -o /dev/null -w %{url_effective} $link))
+    fi
+
+    # extract video id from link
+    id=$(echo $link | sed -n 's/.*[?&]v=\([^&]*\).*/\1/p')
+
+    # Vanced only uses 11 characters for their ids
+    id=${id:0:11}
+    echo $id
+}
+
 is_valid_url(){
     regex='(https?|ftp|file)://[-[:alnum:]\+&@#/%?=~_|!:,.;]*[-[:alnum:]\+&@#/%=~_|]'
-    if [[ $string =~ $regex ]]
+    if [[ $1 =~ $regex ]]
     then 
         echo "1"
     else
@@ -64,32 +96,67 @@ is_valid_url(){
 
 yap(){
     
-    LONGOPTS="itag:,save-images"
-    OPTIONS="i:,s"
+    LONGOPTS="itag:,cover,link:,song:,album:,artist:,tag,output:,replace"
+    OPTIONS="i:,c,l:,s:,a:,p:,t,o:,r"
 
     ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
     if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
         # e.g. return value is 1
         #  then getopt has complained about wrong arguments to stdout
-        exit 2
+        return 2
     fi
     # read getopt’s output
     eval set -- "$PARSED"
 
     # itag for lowest quality m4a (see https://gist.github.com/sidneys/7095afe4da4ae58694d128b1034e01e2)
     itag=139
-
-    saveImages=false
+    thumbImage=false
+    tag=false
+    replace=false
+    link=''
+    song=''
+    album=''
+    artist=''
+    output='finish'
 
     while true; do
         case "$1" in
-            -s|--save-images)
-                saveImages=true
+            -c|--cover)
+                thumbImage=true
                 shift
                 ;;
             -i|--itag)
                 itag="$2"
                 shift 2
+                ;;
+            -l|--link)
+                link="$2"
+                shift 2
+                ;;
+            -s|--song)
+                song="$2"
+                shift 2
+                ;;
+            -a|--album)
+                album="$2"
+                shift 2
+                ;;
+            -p|--artist)
+                artist="$2"
+                shift 2
+                ;;
+            -o|--output)
+                output="$2"
+                mkdir "$output"
+                shift 2
+                ;;
+            -t|--tag)
+                tag=true
+                shift
+                ;;
+            -r|--replace)
+                replace=true
+                shift
                 ;;
             --)
                 shift
@@ -104,41 +171,44 @@ yap(){
 
     mkdir -p "$tmp" finish
 
-    if [[ $# -ne 1 ]]; then
-        echo "yap: A single input file is required."
+    if [[ $# -ne 1 && "$link" == '' && "$song" == '' ]]; then
+        echo "yap: You need to specify at least a link or a song name!"
         return 4
     fi
-    list=$1
+    positional=$1
 
-    while read line;
-    do
-        link=$(echo $line | awk -F' ' '{print $1}')
+    if [[ $(is_valid_url "$positional") == "1" ]]; then
+        link="$positional"
+    fi
 
-        # forward link to ensure parameter is in link (also work with bit.ly links)
-        if [[ $link != *"youtube.com"* && $link != *"$invidious"* ]]; then
-            link=$(echo $(curl -Ls -o /dev/null -w %{url_effective} $link))
+    if [[ "$link" != '' ]]; then
+        id=$(get_link_audio_id $link)
+    else
+        song=$positional
+        search=$positional
+        if [[ "$artist" != '' ]]; then
+            search="$search $artist"
         fi
+        if [[ "$album" != '' ]]; then
+            search="$search $album"
+        fi
+        echo "Searching by: $search"
+        search=$(concatenate_with_plus "$search")
+        id=$(get_invidious_audio_search_id "$search")
+    fi
 
-        # extract video id from link
-        id=$(echo $link | sed -n 's/.*[?&]v=\([^&]*\).*/\1/p')
+    
+    name="$song"
 
+    # If name is not given, take title of the video
+    [ "$name" == '' ] && name=$(curl -Ls "$invidious/watch?v=$id" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs)
 
-        # Vanced only uses 11 characters for their ids
-        id=${id:0:11}
+    # Skip loop element, when file already exists
+    if [[ -f "$output/$name".m4a && "$replace" == "false" ]]; then
+        echo -e "Skipping \"$name\", because it already exists" && return 0
+    fi
 
-
-        # Get given Name
-        name=$(echo $line | awk -F' ' '{print $2}')
-
-        # If name is not given, take title of the video
-        [ "$name" == '' ] && name=$(curl -Ls "$invidious/watch?v=$id" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs)
-
-        # Skip loop element, when file already exists
-        [ -f finish/"$name".m4a ] && echo -e "Skipping \"$name\", because it already exists" && continue
-
-        audio_download_invidious "$name" "$id" "$itag"
-
-    done < $list
+    audio_download_invidious "$name" "$id" "$itag" "$thumbImage" "$output"
 
     [ -f "$tmp" ] && rmdir "$tmp"
 }
