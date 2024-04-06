@@ -61,10 +61,10 @@ audio_download_invidious(){
         [ $RC -eq 0 ] && (ffmpeg -nostdin -i "$tmp/$name.m4a" -i "$tmp/$name-cover.jpg" -map 0:0 -map 1:0 -acodec copy -id3v2_version 3 "finish/$name.m4a") 2> /dev/null
         if [ $RC -ne 0 ]; then
             echo "Could add thumbnail to audio!"
-            cp "$tmp/$name.m4a" "$output/$name.m4a"
+            mv "$tmp/$name.m4a" "$output/$name.m4a"
         fi
     else
-        cp "$tmp/$name.m4a" "$output/$name.m4a"
+        mv "$tmp/$name.m4a" "$output/$name.m4a"
     fi
     
 }
