@@ -6,7 +6,7 @@ Download Audio from Invidious by link or automatic search by song name.
 - ffmpeg
 
 ### Setup
-Clone this repository, then run:
+Clone this repository and enter it, then run:
 ```
 echo "source $(pwd)/yap.sh" >> ~/.bashrc
 ```
