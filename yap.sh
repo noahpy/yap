@@ -206,6 +206,11 @@ yap(){
 
     mkdir -p "$tmp" "$output"
 
+    if [[ $# -gt 1 ]];then
+        echo "Found more than one positional argument!"
+        return 4
+    fi
+
 
     if [[ $# -ne 1 && "$link" == '' && "$song" == '' ]]; then
         echo "yap: You need to specify at least a link or a song name!"
