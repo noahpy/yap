@@ -7,6 +7,30 @@ invidious=https://yt.artemislena.eu
 # temporary files path
 tmp='/tmp/yt-download'
 
+HELP_MSG=$(cat << EOM
+Usage: yap [OPTIONS] [LINK/SONG_NAME]
+
+Download audio from YouTube using Invidious.
+
+Options:
+  -l, --link=LINK         Provide any link pointing to a YouTube video for download.
+  -s, --song=SONG_NAME    Search and download by specifying the song name.
+  -a, --album=ALBUM       Specify the album name (optional for search).
+  -p, --artist=ARTIST     Specify the artist name (optional for search).
+  -o, --output=OUTPUT_DIR Specify the output directory (default: 'finish').
+  -i, --itag=ITAG         Specify the ITAG for audio quality (default: 139).
+  -c, --cover             Include cover image in the downloaded audio file.
+  -t, --tag               Include metadata tags in the downloaded audio file.
+  -r, --replace           Replace existing files if they have the same name.
+  -h, --help              Show this help message.
+  
+Examples:
+  yap https://www.youtube.com/watch?v=VIDEO_ID
+  yap --song="Song Name" --artist="Artist Name" --album="Album Name"
+  yap -s "Song Name" -p "Artist Name"
+  yap -l "https://www.youtube.com/watch?v=VIDEO_ID" -o "custom_output"
+EOM
+)
 
 # Download .m4a of specified video
 audio_download_invidious(){
@@ -96,13 +120,14 @@ is_valid_url(){
 
 yap(){
     
-    LONGOPTS="itag:,cover,link:,song:,album:,artist:,tag,output:,replace"
-    OPTIONS="i:,c,l:,s:,a:,p:,t,o:,r"
+    LONGOPTS="itag:,cover,link:,song:,album:,artist:,tag,output:,replace,help"
+    OPTIONS="i:,c,l:,s:,a:,p:,t,o:,r,h"
 
     ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
     if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
         # e.g. return value is 1
         #  then getopt has complained about wrong arguments to stdout
+        echo "$HELP_MSG"
         return 2
     fi
     # read getopt’s output
@@ -124,6 +149,10 @@ yap(){
             -c|--cover)
                 thumbImage=true
                 shift
+                ;;
+            -h|--help)
+                echo "$HELP_MSG"
+                return 0
                 ;;
             -i|--itag)
                 itag="$2"
