@@ -13,25 +13,34 @@ echo "source $(pwd)/yap.sh" >> ~/.bashrc
 Replace .bashrc with your equivalent shell file.
 
 ### Usage
+One can either specify the audio to be downloaded via link or search term.
+If not specified, this program will derive song / artist name by itself 
+and name the downloaded file accordingly.
+
+
 Download from link (any link pointing to a YouTube / Invidious video):
 ```
-yap [LINK]
+yap "[LINK]"
 ```
 Download by search:
 ```
-yap [SONG]
+yap "[SEARCH]"
 ```
 Download by search with additional info:
 ```
-yap [SONG] -p [ARTIST] -a [ALBUM]
+yap "[SEARCH]" -p "[ARTIST]" -a "[ALBUM]"
 ```
 Include cover into downloaded audio file:
 ```
-yap [LINK/SONG] -c
+yap "[LINK/SEARCH]" -c
+```
+Download by search but set song name:
+```
+yap "[SEARCH]" -s "[SONGNAME]"
 ```
 Automatically edit audio tags with given info (TBD):
 ```
-yap [LINK/SONG] -t
+yap "[LINK/SEARCH]" -t
 ```
 
 

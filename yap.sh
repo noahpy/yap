@@ -69,6 +69,44 @@ audio_download_invidious(){
     
 }
 
+# Function to find the longest common substring
+find_longest_common_substring() {
+    if ((${#1}>${#2})); then
+       long=$1 short=$2
+    else
+       long=$2 short=$1
+    fi
+
+    lshort=${#short}
+    score=0
+    for ((i=0;i<lshort-score;++i)); do
+       for ((l=score+1;l<=lshort-i;++l)); do
+          sub=${short:i:l}
+          [[ $long != *$sub* ]] && break
+          subfound=$sub score=$l
+       done
+    done
+
+    if ((score)); then
+       echo "$subfound"
+    fi
+}
+
+# clean title name
+clean_title_name(){
+    TITLE_WORDS=("official" "video" "audio" "lyric" "lyrics" "offizielles" "musikvideo" "mv" "$2")
+    local str="$1"
+    str=$(echo "$str" | sed -E 's/\([^)]+\)//g')
+    for word in "${TITLE_WORDS[@]}"; do
+        str=$(echo "$str" | sed -E "s/\b${word}\b//gi")
+    done
+    str=$(echo "$str" | tr -d '[:punct:]')       # Remove all punctuation characters
+    str=$(echo "$str" | sed -E 's/ +/ /g')           # Reduce consecutive whitespaces to one
+    str=$(echo "$str" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//') # Trim whitespaces
+
+    echo "$str"
+}
+
 
 # Function to remove quotes and concatenate strings with '+'
 concatenate_with_plus() {
@@ -240,15 +278,28 @@ yap(){
     
     name="$song"
 
+    site_info=$(curl -Ls "$invidious/watch?v=$id")
+
     # If name is not given, take title of the video
-    [ "$name" == '' ] && name=$(curl -Ls "$invidious/watch?v=$id" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs) && echo "Found title: $name"
+    [ "$name" == '' ] && name=$(echo "$site_info" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs) && echo "Found video: $name"
+
+    # If artis not specified, derive from site info
+    if [[ "$artist" == '' ]]; then
+        channel=$(echo "$site_info" | grep '"channel-name"' | cut -d '>' -f 2 | cut -d '<' -f 1)
+        artist=$(find_longest_common_substring "$channel" "$name")
+        [ "$artist" == '' ] && artist="$channel"
+        echo "Derived artist name: $artist"
+    fi
+
+
+    [ "$song" == '' ] && name=$(clean_title_name "$name" "$artist") && echo "Derived song name: $name"
 
     # Skip loop element, when file already exists
     if [[ -f "$output/$name".m4a && "$replace" == "false" ]]; then
         echo -e "Skipping \"$name\", because it already exists" && return 0
     fi
 
-    audio_download_invidious "$name" "$id" "$itag" "$thumbImage" "$output"
+    audio_download_invidious "$(concatenate_with_underscore "$name")" "$id" "$itag" "$thumbImage" "$output"
 
     [ -f "$tmp" ] && rmdir "$tmp"
 
