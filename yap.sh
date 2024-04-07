@@ -8,7 +8,7 @@ invidious=https://yt.artemislena.eu
 tmp='/tmp/yt-download'
 
 HELP_MSG=$(cat << EOM
-Usage: yap [OPTIONS] [LINK/SONG_NAME]
+Usage: yap [OPTIONS] [LINK/SEARCH_TERM]
 
 Download audio from YouTube using Invidious.
 
@@ -27,7 +27,7 @@ Options:
 
   
 Examples:
-  yap https://www.youtube.com/watch?v=VIDEO_ID
+  yap "https://www.youtube.com/watch?v=VIDEO_ID"
   yap --song="Song Name" --artist="Artist Name" --album="Album Name"
   yap -s "Song Name" -p "Artist Name"
   yap -l "https://www.youtube.com/watch?v=VIDEO_ID" -o "custom_output"
@@ -94,7 +94,7 @@ find_longest_common_substring() {
 
 # clean title name
 clean_title_name(){
-    TITLE_WORDS=("official" "video" "audio" "lyric" "lyrics" "offizielles" "musikvideo" "mv" "$2")
+    TITLE_WORDS=("official" "video" "audio" "lyric" "lyrics" "offizielles" "musikvideo" "mv" "nbsp" "Topic" "$2")
     local str="$1"
     str=$(echo "$str" | sed -E 's/\([^)]+\)//g')
     for word in "${TITLE_WORDS[@]}"; do
@@ -251,7 +251,7 @@ yap(){
 
 
     if [[ $# -ne 1 && "$link" == '' && "$song" == '' ]]; then
-        echo "yap: You need to specify at least a link or a song name!"
+        echo "yap: You need to specify at least a link, search term or a song name!"
         return 4
     fi
     positional=$1
@@ -263,7 +263,8 @@ yap(){
     if [[ "$link" != '' ]]; then
         id=$(get_link_audio_id $link)
     else
-        search=$positional
+        search="$song"
+        [ "$positional" != '' ] && search=$positional
         if [[ "$artist" != '' ]]; then
             search="$search $artist"
         fi
@@ -280,14 +281,15 @@ yap(){
 
     site_info=$(curl -Ls "$invidious/watch?v=$id")
 
-    # If name is not given, take title of the video
-    [ "$name" == '' ] && name=$(echo "$site_info" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs) && echo "Found video: $name"
+    title=$(echo "$site_info" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs) 
+    echo "Found video: $title"
+    [ "$name" == '' ] && name="$title"
 
     # If artis not specified, derive from site info
     if [[ "$artist" == '' ]]; then
         channel=$(echo "$site_info" | grep '"channel-name"' | cut -d '>' -f 2 | cut -d '<' -f 1)
         artist=$(find_longest_common_substring "$channel" "$name")
-        [ "$artist" == '' ] && artist="$channel"
+        [ ${#artist} -le 4 ] && artist=$(clean_title_name "$channel")
         echo "Derived artist name: $artist"
     fi
 
