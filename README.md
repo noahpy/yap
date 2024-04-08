@@ -1,6 +1,12 @@
 # YAP (Youtube Audio Puller)
 Download Audio from Invidious by link or automatic search by song name.
 
+## Functionalities
+- Download audio by Invidious / YouTube link
+- Download audio by search term
+- Download playlists by Invidious / YouTube playlist link
+- Automatically tag artist, album, cover to audio file (tbd)
+
 ### Dependencies
 - curl
 - ffmpeg
@@ -38,6 +44,10 @@ yap "[LINK/SEARCH]" -c
 Download by search but set song name:
 ```
 yap "[SEARCH]" -s "[SONGNAME]"
+```
+Download multiple audios specified by playlist link:
+```
+yap "[PLAYLIST_LINK]"
 ```
 Automatically edit audio tags with given info (TBD):
 ```
