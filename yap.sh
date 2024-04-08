@@ -280,7 +280,7 @@ yap(){
         echo "yap: You need to specify at least a link, search term or a song name!"
         return 4
     fi
-    positional=$1
+    local positional=$1
 
 
     if [[ $(is_valid_url "$positional") == "1" ]]; then
@@ -295,7 +295,7 @@ yap(){
         fi
         if [[ $link == *"list="* ]]; then
             echo "Detected playlist!"
-            id=$(echo "$link" | sed -n 's/.*[?&]list=\([^"]*\).*/\1/p')
+            local id=$(echo "$link" | sed -n 's/.*[?&]list=\([^"]*\).*/\1/p')
             [ "$artist" == '' ] && artist="-"
             [ "$album" == '' ] && album="-"
             yap_playlist "$id" "$artist" "$album" "$thumbImage" "$replace" "$tag" "$output" "$interactive"
@@ -305,7 +305,7 @@ yap(){
         id=$(get_link_audio_id $link)
     # get id from search
     else
-        search="$song"
+        local search="$song"
         [ "$positional" != '' ] && search=$positional
         if [[ "$artist" != '' ]]; then
             search="$search $artist"
@@ -319,19 +319,19 @@ yap(){
     fi
 
     
-    name="$song"
+    local name="$song"
 
-    site_info=$(curl -Ls "$invidious/watch?v=$id")
+    local site_info=$(curl -Ls "$invidious/watch?v=$id")
     
     # echo "$site_info" | less
 
-    title=$(echo "$site_info" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs) 
+    local title=$(echo "$site_info" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs) 
     echo "Found video: $title"
     [ "$name" == '' ] && name="$title"
 
     # If artis not specified, derive from site info
     if [[ "$artist" == '' ]]; then
-        channel=$(echo "$site_info" | grep '"channel-name"' | cut -d '>' -f 2 | cut -d '<' -f 1)
+        local channel=$(echo "$site_info" | grep '"channel-name"' | cut -d '>' -f 2 | cut -d '<' -f 1)
         artist=$(find_longest_common_substring "$channel" "$name")
         [ ${#artist} -le 4 ] && artist=$(clean_title_name "$channel")
         echo "Derived artist name: $artist"
@@ -354,7 +354,7 @@ yap(){
         fi
     fi
 
-    file_name=$(concatenate_with_underscore "$name")
+   local file_name=$(concatenate_with_underscore "$name")
     # Skip loop element, when file already exists
     if [[ -f "$output/$file_name".m4a && "$replace" == "false" ]]; then
         echo -e "Skipping \"$name\", because it already exists"
