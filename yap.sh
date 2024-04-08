@@ -37,6 +37,7 @@ audio_download_invidious(){
     local itag=$3
     local thumbnail=$4 
     local output=$5
+    local tag=$6
     echo "Curling $name from: $invidious/latest_version?id=$id&itag=$itag"
     curl -Ls "$invidious/latest_version?id=$id&itag=$itag" -o "$tmp/$name.m4a"
     RC=$(echo $?)
@@ -45,23 +46,27 @@ audio_download_invidious(){
         return 1
     fi
 
-    # get cover image
-    if [[ "$thumbnail" == "true" ]]; then
-        [ $RC -eq 0 ] && curl -Ls "$invidious/vi/$id/maxres.jpg" -o "$tmp/$name-cover.jpg"
+    if [[ "$thumbnail" == "true" || "$tag" == "true" ]]; then
+        # get cover image
+        curl -Ls "$invidious/vi/$id/maxres.jpg" -o "$tmp/$name-cover.jpg"
         RC=$(echo $?)
         if [ $RC -ne 0 ]; then
             echo "Could not curl thumbnail!"
         fi
 
-        # insert image to audio
-        [ $RC -eq 0 ] && (ffmpeg -nostdin -i "$tmp/$name.m4a" -i "$tmp/$name-cover.jpg" -map 0:0 -map 1:0 -acodec copy -id3v2_version 3 "finish/$name.m4a") 2> /dev/null
-        if [ $RC -ne 0 ]; then
-            echo "Could add thumbnail to audio!"
-            mv "$tmp/$name.m4a" "$output/$name.m4a"
+        if [[ "$thumbnail" == "true" ]]; then
+            # insert image to audio
+            [ $RC -eq 0 ] && (ffmpeg -nostdin -i "$tmp/$name.m4a" -i "$tmp/$name-cover.jpg" -map 0:0 -map 1:0 -acodec copy -id3v2_version 3 "finish/$name.m4a") 2> /dev/null
+            RC=$(echo $?)
+            if [[ $RC -ne 0 ]]; then
+                echo "Could not add thumbnail to audio!"
+                mv "$tmp/$name.m4a" "$output/$name.m4a"
+            fi
+            return 0
         fi
-    else
-        mv "$tmp/$name.m4a" "$output/$name.m4a"
     fi
+
+    mv "$tmp/$name.m4a" "$output/$name.m4a"
     
 }
 
@@ -354,12 +359,22 @@ yap(){
     if [[ -f "$output/$file_name".m4a && "$replace" == "false" ]]; then
         echo -e "Skipping \"$name\", because it already exists"
     else
-        audio_download_invidious "$file_name" "$id" "$itag" "$thumbImage" "$output"
+        audio_download_invidious "$file_name" "$id" "$itag" "$thumbImage" "$output" "$tag"
+    fi
+
+    if [[ "$tag" == "true" ]]; then
+        # set tags
+        tageditor set title="$name" artist="$artist" album="$album" cover="$tmp/$name-cover.jpg" -f "$output/$name.m4a" > /dev/null
+        RC=$(echo $?)
+        if [ $RC -ne 0 ]; then
+            echo -e "\nSomething went wrong when tagging!"
+        fi
     fi
 
     [ -f "$tmp" ] && rmdir "$tmp"
 
     if [[ "$play" != '' ]]; then
+        echo -e "\nExecuting $play"
         $play "$output/$file_name.m4a"
     fi
 }
