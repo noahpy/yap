@@ -1,12 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 
 
 ### GLOBAL VARIABLES ###
-# invidious instance
-invidious=https://yt.artemislena.eu
-# temporary files path
-tmp='/tmp/yt-download'
-
 HELP_MSG=$(cat << EOM
 Usage: yap [OPTIONS] [LINK/SEARCH_TERM]
 
@@ -36,11 +31,11 @@ EOM
 
 # Download .m4a of specified video
 audio_download_invidious(){
-    name=$1
-    id=$2
-    itag=$3
-    thumbnail=$4 
-    output=$5
+    local name=$1
+    local id=$2
+    local itag=$3
+    local thumbnail=$4 
+    local output=$5
     echo "Curling $name from: $invidious/latest_version?id=$id&itag=$itag"
     curl -Ls "$invidious/latest_version?id=$id&itag=$itag" -o "$tmp/$name.m4a"
     RC=$(echo $?)
@@ -77,8 +72,8 @@ find_longest_common_substring() {
        long=$2 short=$1
     fi
 
-    lshort=${#short}
-    score=0
+    local lshort=${#short}
+    local score=0
     for ((i=0;i<lshort-score;++i)); do
        for ((l=score+1;l<=lshort-i;++l)); do
           sub=${short:i:l}
@@ -94,7 +89,22 @@ find_longest_common_substring() {
 
 # clean title name
 clean_title_name(){
-    TITLE_WORDS=("official" "video" "audio" "lyric" "lyrics" "offizielles" "musikvideo" "mv" "nbsp" "Topic" "$2")
+    TITLE_WORDS=("official" "video" "audio" "lyric" "lyrics" "offizielles" "musikvideo" "mv" "nbsp" "topic" "soundtrack" "sound" "$2")
+    local str="$1"
+    str=$(echo "$str" | sed -E 's/\([^)]+\)//g')
+    for word in "${TITLE_WORDS[@]}"; do
+        str=$(echo "$str" | sed -E "s/\b${word}\b//gi")
+    done
+    str=$(echo "$str" | tr -d '[:punct:]')       # Remove all punctuation characters
+    str=$(echo "$str" | sed -E 's/ +/ /g')           # Reduce consecutive whitespaces to one
+    str=$(echo "$str" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//') # Trim whitespaces
+
+    echo "$str"
+}
+
+# clean playlist name
+clean_playlist_name(){
+    TITLE_WORDS=("official" "video" "audio" "lyric" "lyrics" "offizielles" "musikvideo" "mv" "nbsp" "Topic" "playlist" "album" "invidious" "$2")
     local str="$1"
     str=$(echo "$str" | sed -E 's/\([^)]+\)//g')
     for word in "${TITLE_WORDS[@]}"; do
@@ -108,40 +118,37 @@ clean_title_name(){
 }
 
 
+
 # Function to remove quotes and concatenate strings with '+'
 concatenate_with_plus() {
-    input="$1"
+    local input="$1"
     # Remove single and double quotes, then replace spaces with '+'
-    result=$(echo "$input" | awk -v RS="[\"']" '{gsub(/ /, "+", $0); printf "%s", $0}')
+    local result=$(echo "$input" | awk -v RS="[\"']" '{gsub(/ /, "+", $0); printf "%s", $0}')
     echo "$result"
 }
 
 # Function to remove quotes and concatenate strings with '_'
 concatenate_with_underscore() {
-    input="$1"
+    local input="$1"
     # Remove single and double quotes, then replace spaces with '+'
-    result=$(echo "$input" | awk -v RS="[\"']" '{gsub(/ /, "_", $0); printf "%s", $0}')
+    local result=$(echo "$input" | awk -v RS="[\"']" '{gsub(/ /, "_", $0); printf "%s", $0}')
     echo "$result"
 }
 
 
 # Get the ID of the first search result on Invidious
 get_invidious_audio_search_id(){
-    search="$1"
-    result=$(wget -nv -qO - "$invidious/search?q=$search+Audio" | grep "watch?v=" | head -n1 | sed -n 's/.*[?&]v=\([^"]*\).*/\1/p')
+    local search="$1"
+    local result=$(wget -nv -qO - "$invidious/search?q=$search+Audio" | grep "watch?v=" | head -n1 | sed -n 's/.*[?&]v=\([^"]*\).*/\1/p')
     echo $result
 }
 
 # Get ID out of given link
 get_link_audio_id(){
-    link=$1
-    # forward link to ensure parameter is in link (also work with bit.ly links)
-    if [[ $link != *"watch?v="* ]]; then
-        link=$(echo $(curl -Ls -o /dev/null -w %{url_effective} $link))
-    fi
-
+    local link=$1
+    
     # extract video id from link
-    id=$(echo $link | sed -n 's/.*[?&]v=\([^&]*\).*/\1/p')
+    local id=$(echo $link | sed -n 's/.*[?&]v=\([^&]*\).*/\1/p')
 
     # Vanced only uses 11 characters for their ids
     id=${id:0:11}
@@ -158,7 +165,15 @@ is_valid_url(){
     fi
 }
 
+
+
 yap(){
+
+    # invidious instance
+    local invidious=https://yt.artemislena.eu
+    # temporary files path
+    local tmp='/tmp/yt-download'
+
     
     LONGOPTS="itag:,cover,link:,song:,album:,artist:,tag,output:,replace,help,play:"
     OPTIONS="i:,c,l:,s:,a:,p:,t,o:,r,h"
@@ -174,16 +189,17 @@ yap(){
     eval set -- "$PARSED"
 
     # itag for lowest quality m4a (see https://gist.github.com/sidneys/7095afe4da4ae58694d128b1034e01e2)
-    itag=139
-    thumbImage=false
-    tag=false
-    replace=false
-    link=''
-    song=''
-    album=''
-    artist=''
-    output='finish'
-    play=''
+    local itag=139
+    local thumbImage=false
+    local tag=false
+    local replace=false
+    local link=''
+    local song=''
+    local album=''
+    local artist=''
+    local output='finish'
+    local play=''
+
 
     while true; do
         case "$1" in
@@ -245,10 +261,9 @@ yap(){
     mkdir -p "$tmp" "$output"
 
     if [[ $# -gt 1 ]];then
-        echo "Found more than one positional argument!"
+        echo "Found more than one positional argument:$1 and $2"
         return 4
     fi
-
 
     if [[ $# -ne 1 && "$link" == '' && "$song" == '' ]]; then
         echo "yap: You need to specify at least a link, search term or a song name!"
@@ -256,12 +271,28 @@ yap(){
     fi
     positional=$1
 
+
     if [[ $(is_valid_url "$positional") == "1" ]]; then
         link="$positional"
     fi
 
+    # get id from link
     if [[ "$link" != '' ]]; then
+        # forward link to ensure parameter is in link (also work with bit.ly links)
+        if [[ $link != *"watch?v="* ]]; then
+            link=$(echo $(curl -Ls -o /dev/null -w %{url_effective} $link))
+        fi
+        if [[ $link == *"list="* ]]; then
+            echo "Detected playlist!"
+            id=$(echo "$link" | sed -n 's/.*[?&]list=\([^"]*\).*/\1/p')
+            [ "$artist" == '' ] && artist="-"
+            [ "$album" == '' ] && album="-"
+            yap_playlist "$id" "$artist" "$album" "$thumImage" "$replace" "$tag" "$output"
+            return 0
+        fi
+
         id=$(get_link_audio_id $link)
+    # get id from search
     else
         search="$song"
         [ "$positional" != '' ] && search=$positional
@@ -280,6 +311,8 @@ yap(){
     name="$song"
 
     site_info=$(curl -Ls "$invidious/watch?v=$id")
+    
+    # echo "$site_info" | less
 
     title=$(echo "$site_info" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs) 
     echo "Found video: $title"
@@ -294,19 +327,84 @@ yap(){
     fi
 
 
+    # Derive song name if not specified
     [ "$song" == '' ] && name=$(clean_title_name "$name" "$artist") && echo "Derived song name: $name"
 
-    # Skip loop element, when file already exists
-    if [[ -f "$output/$name".m4a && "$replace" == "false" ]]; then
-        echo -e "Skipping \"$name\", because it already exists" && return 0
-    fi
 
-    audio_download_invidious "$(concatenate_with_underscore "$name")" "$id" "$itag" "$thumbImage" "$output"
+    file_name=$(concatenate_with_underscore "$name")
+    # Skip loop element, when file already exists
+    if [[ -f "$output/$file_name".m4a && "$replace" == "false" ]]; then
+        echo -e "Skipping \"$name\", because it already exists"
+    else
+        audio_download_invidious "$file_name" "$id" "$itag" "$thumbImage" "$output"
+    fi
 
     [ -f "$tmp" ] && rmdir "$tmp"
 
     if [[ "$play" != '' ]]; then
-        $play "$output/$name.m4a"
+        $play "$output/$file_name.m4a"
     fi
+}
+
+yap_playlist(){
+    local id=$1
+    local artist=$2
+    local album=$3
+    local thumbImage=$4
+    local replace=$5
+    local tag=$6
+    local output=$7
+    
+    site_info=$(wget -nv -qO - "$invidious/playlist?list=$id")
+    
+    playlist="$album"
+    if [[ "$album" == '-' ]]; then
+        playlist=$(echo "$site_info" | sed -n 's/.*title>\(.*\)<.*/\1/p')
+        playlist=$(clean_playlist_name "$playlist" "$artist")
+        echo "Derived playlist name: $playlist"
+    fi
+    output="$output/$playlist"
+    mkdir "$output"
+    local input="-o \"$output\""
+
+    [ "$artist" != '-' ] && input="$input -p \"$artist\""
+
+    # if [[ "$artist" != '-' ]]; then
+    #     artist="-p '$artist'"
+    # else
+    #     artist=''
+    # fi
+    # if [[ "$album" != '-' ]]; then
+    #     album="-a '$album'"
+    # else
+    #     album=''
+    # fi
+    # if [[ "$thumbImage" == 'true' ]]; then
+    #     thumbImage="-c"
+    # else
+    #     thumbImage=''
+    # fi
+    # if [[ "$replace" == 'true' ]]; then
+    #     replace="-r"
+    # else
+    #     replace=''
+    # fi
+    # if [[ "$tag" == 'true' ]]; then
+    #     tag="-t"
+    # else
+    #     tag=''
+    # fi
+    
+    echo "$input"
+
+    ids=$(echo $site_info | sed -n 's/>/\n/gp' |  grep "watch?v=" |  sed -n 's/.*[?&]v=\([^&]*\).*/\1/p' | sed '$!N; /^\(.*\)\n\1$/!P; D')
+
+    while IFS= read -r line;
+    do
+        echo 
+        # yap "$invidious/watch?v=$line $output $artist $album" 
+        echo "\"$invidious/watch?v=$line\" $input" | xargs sh -c 'source "$1/yap.sh"; yap "${@:2}"' _  $YAP_PATH
+    done < <(printf '%s\n' "$ids")
+
 }
 
