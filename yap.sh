@@ -364,10 +364,10 @@ yap(){
 
     if [[ "$tag" == "true" ]]; then
         # set tags
-        tageditor set title="$name" artist="$artist" album="$album" cover="$tmp/$name-cover.jpg" -f "$output/$name.m4a" > /dev/null
+        tageditor set title="$name" artist="$artist" album="$album" cover="$tmp/$name-cover.jpg" -f "$output/$file_name.m4a" > /dev/null
         RC=$(echo $?)
         if [ $RC -ne 0 ]; then
-            echo -e "\nSomething went wrong when tagging!"
+            echo -e "Something went wrong when tagging!"
         fi
     fi
 
