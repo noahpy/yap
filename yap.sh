@@ -368,33 +368,11 @@ yap_playlist(){
     local input="-o \"$output\""
 
     [ "$artist" != '-' ] && input="$input -p \"$artist\""
-
-    # if [[ "$artist" != '-' ]]; then
-    #     artist="-p '$artist'"
-    # else
-    #     artist=''
-    # fi
-    # if [[ "$album" != '-' ]]; then
-    #     album="-a '$album'"
-    # else
-    #     album=''
-    # fi
-    # if [[ "$thumbImage" == 'true' ]]; then
-    #     thumbImage="-c"
-    # else
-    #     thumbImage=''
-    # fi
-    # if [[ "$replace" == 'true' ]]; then
-    #     replace="-r"
-    # else
-    #     replace=''
-    # fi
-    # if [[ "$tag" == 'true' ]]; then
-    #     tag="-t"
-    # else
-    #     tag=''
-    # fi
-    
+    [ "$album" != '-' ] && input="$input -a \"$album\""
+    [ "$thumbImage" == 'true' ] && input="$input -c"
+    [ "$replace" == 'true' ] && input="$input -r"
+    [ "$tag" == 'true' ] && input="$input -t"
+        
     echo "$input"
 
     ids=$(echo $site_info | sed -n 's/>/\n/gp' |  grep "watch?v=" |  sed -n 's/.*[?&]v=\([^&]*\).*/\1/p' | sed '$!N; /^\(.*\)\n\1$/!P; D')
