@@ -8,7 +8,7 @@ Usage: yap [OPTIONS] [LINK/SEARCH_TERM]
 Download audio from YouTube using Invidious.
 
 Options:
-  -l, --link=LINK         Provide any link pointing to a YouTube / Invidious video for download.
+  -l, --link=LINK         Download from link pointing to a video / playlist.
   -s, --song=SONG_NAME    Search and download by specifying the song name.
   -a, --album=ALBUM       Specify the album name (optional for search).
   -p, --artist=ARTIST     Specify the artist name (optional for search).
@@ -287,7 +287,7 @@ yap(){
             id=$(echo "$link" | sed -n 's/.*[?&]list=\([^"]*\).*/\1/p')
             [ "$artist" == '' ] && artist="-"
             [ "$album" == '' ] && album="-"
-            yap_playlist "$id" "$artist" "$album" "$thumImage" "$replace" "$tag" "$output"
+            yap_playlist "$id" "$artist" "$album" "$thumbImage" "$replace" "$tag" "$output"
             return 0
         fi
 
@@ -363,7 +363,7 @@ yap_playlist(){
         playlist=$(clean_playlist_name "$playlist" "$artist")
         echo "Derived playlist name: $playlist"
     fi
-    output="$output/$playlist"
+    output="$output/$(concatenate_with_underscore "$playlist")"
     mkdir "$output"
     local input="-o \"$output\""
 
@@ -372,17 +372,16 @@ yap_playlist(){
     [ "$thumbImage" == 'true' ] && input="$input -c"
     [ "$replace" == 'true' ] && input="$input -r"
     [ "$tag" == 'true' ] && input="$input -t"
-        
-    echo "$input"
 
     ids=$(echo $site_info | sed -n 's/>/\n/gp' |  grep "watch?v=" |  sed -n 's/.*[?&]v=\([^&]*\).*/\1/p' | sed '$!N; /^\(.*\)\n\1$/!P; D')
 
     while IFS= read -r line;
     do
         echo 
-        # yap "$invidious/watch?v=$line $output $artist $album" 
         echo "\"$invidious/watch?v=$line\" $input" | xargs sh -c 'source "$1/yap.sh"; yap "${@:2}"' _  $YAP_PATH
     done < <(printf '%s\n' "$ids")
 
 }
 
+
+YAP_PATH='/home/noah/.programs/yap'
