@@ -1,7 +1,7 @@
 # YAP (Youtube Audio Puller)
 Download Audio from Invidious by link or automatic search by song name.
 
-## Functionalities
+### Functionality
 - Download audio by Invidious / YouTube link
 - Download audio by search term
 - Download playlists by Invidious / YouTube playlist link
