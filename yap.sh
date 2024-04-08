@@ -18,6 +18,7 @@ Options:
   -t, --tag               Include metadata tags in the downloaded audio file.
   -r, --replace           Replace existing files if they have the same name.
       --play=COMMAND      Execute COMMAND AUDIO_FILE after finished download.
+  -v, --interactive       Run everything interactively.
   -h, --help              Show this help message.
 
   
@@ -175,8 +176,8 @@ yap(){
     local tmp='/tmp/yt-download'
 
     
-    LONGOPTS="itag:,cover,link:,song:,album:,artist:,tag,output:,replace,help,play:"
-    OPTIONS="i:,c,l:,s:,a:,p:,t,o:,r,h"
+    LONGOPTS="itag:,cover,link:,song:,album:,artist:,tag,output:,replace,help,play:,interactive"
+    OPTIONS="i:,c,l:,s:,a:,p:,t,o:,r,h,v"
 
     ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
     if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
@@ -193,6 +194,7 @@ yap(){
     local thumbImage=false
     local tag=false
     local replace=false
+    local interactive=false
     local link=''
     local song=''
     local album=''
@@ -243,6 +245,10 @@ yap(){
                 replace=true
                 shift
                 ;;
+            -v|--interactive)
+                interactive=true
+                shift
+                ;;
             --play)
                 play="$2"
                 shift 2
@@ -287,7 +293,7 @@ yap(){
             id=$(echo "$link" | sed -n 's/.*[?&]list=\([^"]*\).*/\1/p')
             [ "$artist" == '' ] && artist="-"
             [ "$album" == '' ] && album="-"
-            yap_playlist "$id" "$artist" "$album" "$thumbImage" "$replace" "$tag" "$output"
+            yap_playlist "$id" "$artist" "$album" "$thumbImage" "$replace" "$tag" "$output" "$interactive"
             return 0
         fi
 
@@ -324,12 +330,24 @@ yap(){
         artist=$(find_longest_common_substring "$channel" "$name")
         [ ${#artist} -le 4 ] && artist=$(clean_title_name "$channel")
         echo "Derived artist name: $artist"
+
+        if [[ "$interactive" == "true" ]]; then
+            read -p "Enter alternative (empty for default): " answer
+            [ "$answer" != '' ] && artist="$answer"
+        fi
     fi
 
 
     # Derive song name if not specified
-    [ "$song" == '' ] && name=$(clean_title_name "$name" "$artist") && echo "Derived song name: $name"
+    if [[ "$song" == '' ]]; then
+        name=$(clean_title_name "$name" "$artist") 
+        echo "Derived song name: $name"
+        if [[ "$interactive" == "true" ]]; then
+            read -p "Enter alternative (empty for default): " answer
+            [ "$answer" != '' ] && name="$answer"
 
+        fi
+    fi
 
     file_name=$(concatenate_with_underscore "$name")
     # Skip loop element, when file already exists
@@ -354,6 +372,7 @@ yap_playlist(){
     local replace=$5
     local tag=$6
     local output=$7
+    local interactive=$8
     
     site_info=$(wget -nv -qO - "$invidious/playlist?list=$id")
     
@@ -362,6 +381,10 @@ yap_playlist(){
         playlist=$(echo "$site_info" | sed -n 's/.*title>\(.*\)<.*/\1/p')
         playlist=$(clean_playlist_name "$playlist" "$artist")
         echo "Derived playlist name: $playlist"
+        if [[ "$interactive" == "true" ]]; then
+            read -p "Enter alternative (empty for default): " answer
+            [ "$answer" != '' ] && playlist="$answer"
+        fi
     fi
     output="$output/$(concatenate_with_underscore "$playlist")"
     mkdir "$output"
@@ -372,6 +395,7 @@ yap_playlist(){
     [ "$thumbImage" == 'true' ] && input="$input -c"
     [ "$replace" == 'true' ] && input="$input -r"
     [ "$tag" == 'true' ] && input="$input -t"
+    [ "$interactive" == 'true' ] && input="$input -v"
 
     ids=$(echo $site_info | sed -n 's/>/\n/gp' |  grep "watch?v=" |  sed -n 's/.*[?&]v=\([^&]*\).*/\1/p' | sed '$!N; /^\(.*\)\n\1$/!P; D')
 
