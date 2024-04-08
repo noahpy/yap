@@ -369,7 +369,7 @@ yap(){
         if [ $RC -ne 0 ]; then
             echo -e "Something went wrong when tagging!"
         fi
-        rm "$ouput/*.bak"
+        rm "$output/*.bak"
     fi
 
     [ -f "$tmp" ] && rmdir "$tmp"
