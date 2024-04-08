@@ -298,7 +298,7 @@ yap(){
             local id=$(echo "$link" | sed -n 's/.*[?&]list=\([^"]*\).*/\1/p')
             [ "$artist" == '' ] && artist="-"
             [ "$album" == '' ] && album="-"
-            yap_playlist "$id" "$artist" "$album" "$thumbImage" "$replace" "$tag" "$output" "$interactive"
+            yap_playlist "$id" "$artist" "$album" "$thumbImage" "$replace" "$tag" "$output" "$interactive" "$play"
             return 0
         fi
 
@@ -389,6 +389,7 @@ yap_playlist(){
     local tag=$6
     local output=$7
     local interactive=$8
+    local play=$9
     
     site_info=$(wget -nv -qO - "$invidious/playlist?list=$id")
     
@@ -420,6 +421,11 @@ yap_playlist(){
         echo 
         echo "\"$invidious/watch?v=$line\" $input" | xargs -o sh -c 'source "$1/yap.sh"; yap "${@:2}"' _  $YAP_PATH
     done < <(printf '%s\n' "$ids")
+
+    if [[ "$play" != '' ]]; then
+        echo -e "\nExecuting $play"
+        $play "$output"
+    fi
 
 }
 
