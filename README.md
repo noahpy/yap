@@ -5,11 +5,12 @@ Download Audio from Invidious by link or automatic search by song name.
 - Download audio by Invidious / YouTube link
 - Download audio by search term
 - Download playlists by Invidious / YouTube playlist link
-- Automatically tag artist, album, cover to audio file (tbd)
+- Automatically tag artist, album, cover to audio file
 
 ### Dependencies
 - curl
 - ffmpeg
+- [tageditor](https://github.com/Martchus/tageditor?tab=readme-ov-file)
 
 ### Setup
 Clone this repository and enter it, then run:
@@ -49,7 +50,7 @@ Download multiple audios specified by playlist link:
 ```
 yap "[PLAYLIST_LINK]"
 ```
-Automatically edit audio tags with given info (TBD):
+Automatically edit audio tags with given info:
 ```
 yap "[LINK/SEARCH]" -t
 ```
