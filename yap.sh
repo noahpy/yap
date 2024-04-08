@@ -402,7 +402,7 @@ yap_playlist(){
     while IFS= read -r line;
     do
         echo 
-        echo "\"$invidious/watch?v=$line\" $input" | xargs sh -c 'source "$1/yap.sh"; yap "${@:2}"' _  $YAP_PATH
+        echo "\"$invidious/watch?v=$line\" $input" | xargs -o sh -c 'source "$1/yap.sh"; yap "${@:2}"' _  $YAP_PATH
     done < <(printf '%s\n' "$ids")
 
 }
