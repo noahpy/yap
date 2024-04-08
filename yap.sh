@@ -383,5 +383,3 @@ yap_playlist(){
 
 }
 
-
-YAP_PATH='/home/noah/.programs/yap'
