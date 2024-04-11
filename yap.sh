@@ -12,7 +12,7 @@ Options:
   -s, --song=SONG_NAME    Search and download by specifying the song name.
   -a, --album=ALBUM       Specify the album name (optional for search).
   -p, --artist=ARTIST     Specify the artist name (optional for search).
-  -o, --output=OUTPUT_DIR Specify the output directory (default: 'finish').
+  -o, --output=OUTPUT_DIR Specify the output directory (default: '.').
   -i, --itag=ITAG         Specify the ITAG for audio quality (default: 139).
   -c, --cover             Include cover image in the downloaded audio file.
   -t, --tag               Include metadata tags in the downloaded audio file.
@@ -204,7 +204,7 @@ yap(){
     local song=''
     local album=''
     local artist=''
-    local output='finish'
+    local output='.'
     local play=''
 
 
@@ -293,6 +293,12 @@ yap(){
         if [[ $link != *"watch?v="* ]]; then
             link=$(echo $(curl -Ls -o /dev/null -w %{url_effective} $link))
         fi
+        # catch if link points to apple music playlist
+        if [[ "$link" == *"music.apple.com"* && "$link" == *"playlist"* ]]; then
+            echo "Detected Apple Music playlist!"
+            yap_apple_music_playlist "$link" "$itag" "$album"
+        fi
+        # catch if link points to a youtube playlist
         if [[ $link == *"list="* ]]; then
             echo "Detected playlist!"
             local id=$(echo "$link" | sed -n 's/.*[?&]list=\([^"]*\).*/\1/p')
@@ -427,5 +433,37 @@ yap_playlist(){
         $play "$output"
     fi
 
+}
+
+
+yap_apple_music_playlist(){
+    local link=$1
+    local itag=$2
+    local album=$3
+
+    
+    local site_info=$(wget -nv -qO- "$link")
+
+    echo $site_info | sed -n "s/\}/\n/gp" | sed -n 's/.*"name":"\([^"]*\)","url":"\([^"]*\)","duration".*/\1"\2/p' | sort -u - > /tmp/apple_playlist_content.txt
+
+    local playlist=''
+    while [[ "$playlist" == '' ]]; do
+        read -p "Enter playlist name: " playlist
+    done
+
+    echo -e "\nStart curling playlist one by one..."
+    while read line;
+    do
+        local song=$(echo $line | sed -n 's/\([^"]*\)".*/\1/p')
+        local song_link=$(echo $line | sed -n 's/.*"\(.*\)/\1/p')
+
+        local song_info=$(wget -nv -qO- $song_link)
+        echo $song_info | sed -n 's/.*byArtist":\[{[^}]*"name":"\([^"]*\)"[^}]*}.*/\1/p' > /tmp/artist.txt
+        local artist=$(cat /tmp/artist.txt)
+
+        yap -s "$song" -p "$artist" -t -o "$playlist" -i "$itag" -a "$album"
+        echo
+
+    done < /tmp/apple_playlist_content.txt
 }
 
