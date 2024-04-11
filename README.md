@@ -2,7 +2,7 @@
 Download Audio from Invidious by link or automatic search by song name.
 
 ### Functionality
-- Download audio by Invidious / YouTube link
+- Download audio by Invidious / YouTube / Apple Music Playlist link
 - Download audio by search term
 - Download playlists by Invidious / YouTube playlist link
 - Automatically tag artist, album, cover to audio file
