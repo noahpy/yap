@@ -95,7 +95,7 @@ find_longest_common_substring() {
 
 # clean title name
 clean_title_name(){
-    TITLE_WORDS=("official" "video" "audio" "lyric" "lyrics" "offizielles" "musikvideo" "mv" "nbsp" "topic" "soundtrack" "sound" "/" "?" "$2")
+    TITLE_WORDS=("official" "video" "audio" "lyric" "lyrics" "offizielles" "musikvideo" "mv" "nbsp" "topic" "soundtrack" "sound" "\/" "\?" "$2")
     local str="$1"
     str=$(echo "$str" | sed -E 's/\([^)]+\)//g')
     for word in "${TITLE_WORDS[@]}"; do
@@ -110,7 +110,7 @@ clean_title_name(){
 
 # clean playlist name
 clean_playlist_name(){
-    TITLE_WORDS=("official" "video" "audio" "lyric" "lyrics" "offizielles" "musikvideo" "mv" "nbsp" "Topic" "playlist" "album" "invidious" "/" "?" "$2")
+    TITLE_WORDS=("official" "video" "audio" "lyric" "lyrics" "offizielles" "musikvideo" "mv" "nbsp" "Topic" "playlist" "album" "invidious" "\/" "\?" "$2")
     local str="$1"
     str=$(echo "$str" | sed -E 's/\([^)]+\)//g')
     for word in "${TITLE_WORDS[@]}"; do
