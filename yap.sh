@@ -325,7 +325,7 @@ yap(){
     fi
 
     
-    local name="$song"
+    local name=$(clean_title_name "$song")
 
     local site_info=$(curl -Ls "$invidious/watch?v=$id")
     
