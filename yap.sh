@@ -19,6 +19,7 @@ Options:
   -r, --replace           Replace existing files if they have the same name.
       --play=COMMAND      Execute COMMAND AUDIO_FILE after finished download.
   -v, --interactive       Run everything interactively.
+      --invidious=LINK    Specify invidious instace (default: https://yt.artemislena.eu)
   -h, --help              Show this help message.
 
   
@@ -181,7 +182,7 @@ yap(){
     local tmp='/tmp/yt-download'
 
     
-    LONGOPTS="itag:,cover,link:,song:,album:,artist:,tag,output:,replace,help,play:,interactive"
+    LONGOPTS="itag:,cover,link:,song:,album:,artist:,tag,output:,replace,help,play:,interactive,invidious:"
     OPTIONS="i:,c,l:,s:,a:,p:,t,o:,r,h,v"
 
     ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
@@ -240,6 +241,10 @@ yap(){
                 ;;
             -o|--output)
                 output="$2"
+                shift 2
+                ;;
+            --invidious)
+                invidious="$2"
                 shift 2
                 ;;
             -t|--tag)
