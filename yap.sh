@@ -25,7 +25,7 @@ Options:
   
 Examples:
   yap "https://www.youtube.com/watch?v=VIDEO_ID"
-  yap --song="Song Name" --artist="Artist Name" --album="Album Name"
+  yap "Some search terms"
   yap -s "Song Name" -p "Artist Name"
   yap -l "https://www.youtube.com/watch?v=VIDEO_ID" -o "custom_output"
 EOM
@@ -179,11 +179,13 @@ yap(){
     # invidious instance
     local invidious=https://yt.artemislena.eu
     # temporary files path
-    local tmp='/tmp/yt-download'
+    local tmp='/tmp/yap'
+    # max retry count
+    local MAX_TRYS=3
 
     
-    LONGOPTS="itag:,cover,link:,song:,album:,artist:,tag,output:,replace,help,play:,interactive,invidious:"
-    OPTIONS="i:,c,l:,s:,a:,p:,t,o:,r,h,v"
+    local LONGOPTS="itag:,cover,link:,song:,album:,artist:,tag,output:,replace,help,play:,interactive,invidious:"
+    local OPTIONS="i:,c,l:,s:,a:,p:,t,o:,r,h,v"
 
     ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
     if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
@@ -332,11 +334,13 @@ yap(){
     
     local name=$(clean_title_name "$song")
 
-    local site_info=$(curl -Ls "$invidious/watch?v=$id")
-    
-    # echo "$site_info" | less
-
-    local title=$(echo "$site_info" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs) 
+    # try to get video info
+    local try_count=0
+    while [[ $try_count -lt $MAX_TRYS && "$title" == "" ]]; do
+        local site_info=$(curl -Ls "$invidious/watch?v=$id")
+        local title=$(echo "$site_info" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs) 
+        let try_count=try_count+1
+    done
     if [[ "$title" == "" ]]; then
         echo "Video could not be found, you may want to retry with a different invidious instance."
         return 0
