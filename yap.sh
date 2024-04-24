@@ -337,6 +337,10 @@ yap(){
     # echo "$site_info" | less
 
     local title=$(echo "$site_info" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs) 
+    if [[ "$title" == "" ]]; then
+        echo "Video could not be found, you may want to retry with a different invidious instance."
+        return 0
+    fi
     echo "Found video: $title"
     [ "$name" == '' ] && name="$title"
 
