@@ -20,6 +20,7 @@ Options:
       --play=COMMAND      Execute COMMAND AUDIO_FILE after finished download.
   -v, --interactive       Run everything interactively.
       --invidious=LINK    Specify invidious instace (default: https://yt.artemislena.eu)
+      --track=NUM         Specify track number
   -h, --help              Show this help message.
 
   
@@ -184,7 +185,7 @@ yap(){
     local MAX_TRYS=3
 
     
-    local LONGOPTS="itag:,cover,link:,song:,album:,artist:,tag,output:,replace,help,play:,interactive,invidious:"
+    local LONGOPTS="itag:,cover,link:,song:,album:,artist:,tag,output:,replace,help,play:,interactive,invidious:,track:"
     local OPTIONS="i:,c,l:,s:,a:,p:,t,o:,r,h,v"
 
     ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
@@ -209,6 +210,7 @@ yap(){
     local artist=''
     local output='.'
     local play=''
+    local track=''
 
 
     while true; do
@@ -263,6 +265,10 @@ yap(){
                 ;;
             --play)
                 play="$2"
+                shift 2
+                ;;
+            --track)
+                track="$2"
                 shift 2
                 ;;
             --)
@@ -336,9 +342,12 @@ yap(){
 
     # try to get video info
     local try_count=0
+    local site_info=$(curl -Ls "$invidious/watch?v=$id")
+    local title=$(echo "$site_info" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs) 
     while [[ $try_count -lt $MAX_TRYS && "$title" == "" ]]; do
-        local site_info=$(curl -Ls "$invidious/watch?v=$id")
-        local title=$(echo "$site_info" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs) 
+        echo "Retrying..."
+        site_info=$(curl -Ls "$invidious/watch?v=$id")
+        title=$(echo "$site_info" | grep '"title":' | cut -d ':' -f 2- | tr -d [:punct:] | xargs) 
         let try_count=try_count+1
     done
     if [[ "$title" == "" ]]; then
@@ -383,7 +392,11 @@ yap(){
 
     if [[ "$tag" == "true" ]]; then
         # set tags
-        tageditor set title="$name" artist="$artist" album="$album" cover="$tmp/$file_name-cover.jpg" -f "$output/$file_name.m4a" > /dev/null
+        if [[ "$track" == "" ]]; then
+            tageditor set title="$name" artist="$artist" album="$album" cover="$tmp/$file_name-cover.jpg" -f "$output/$file_name.m4a" > /dev/null
+        else
+            tageditor set title="$name" artist="$artist" album="$album" cover="$tmp/$file_name-cover.jpg" track="$track" -f "$output/$file_name.m4a" > /dev/null
+        fi
         RC=$(echo $?)
         if [ $RC -ne 0 ]; then
             echo -e "Something went wrong when tagging!"
@@ -435,10 +448,12 @@ yap_playlist(){
 
     ids=$(echo $site_info | sed -n 's/>/\n/gp' |  grep "watch?v=" |  sed -n 's/.*[?&]v=\([^&]*\).*/\1/p' | sed '$!N; /^\(.*\)\n\1$/!P; D')
 
+    local count=1
     while IFS= read -r line;
     do
         echo 
-        echo "\"$invidious/watch?v=$line\" $input" | xargs -o sh -c 'source "$1/yap.sh"; yap "${@:2}"' _  $YAP_PATH
+        echo "\"$invidious/watch?v=$line\" $input --track=$count" | xargs -o sh -c 'source "$1/yap.sh"; yap "${@:2}"' _  $YAP_PATH
+        let count=count+1
     done < <(printf '%s\n' "$ids")
 
     if [[ "$play" != '' ]]; then
