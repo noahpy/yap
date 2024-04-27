@@ -430,10 +430,8 @@ yap_playlist(){
         playlist=$(echo "$site_info" | sed -n 's/.*title>\(.*\)<.*/\1/p')
         playlist=$(clean_playlist_name "$playlist" "$artist")
         echo "Derived playlist name: $playlist"
-        if [[ "$interactive" == "true" ]]; then
-            read -p "Enter alternative (empty for default): " answer
-            [ "$answer" != '' ] && playlist="$answer"
-        fi
+        read -p "Enter alternative (empty for default): " answer
+        [ "$answer" != '' ] && playlist="$answer"
     fi
     output="$output/$(concatenate_with_underscore "$playlist")"
     mkdir "$output"
