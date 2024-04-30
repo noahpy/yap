@@ -16,7 +16,6 @@ Download Audio from Invidious by link or automatic search by song name.
 Clone this repository and enter it, then run:
 ```
 ./install.sh
-echo "source $(pwd)/yap.sh" >> ~/.bashrc
 ```
 Replace .bashrc with your equivalent shell file.
 
