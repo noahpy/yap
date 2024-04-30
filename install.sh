@@ -1,2 +1,3 @@
 #!/bin/sh
-echo -e "\nYAP_PATH='$(pwd)'" >> yap.sh 
+
+sudo ln -s $(pwd)/yap.sh /usr/bin/yap

@@ -450,7 +450,7 @@ yap_playlist(){
     while IFS= read -r line;
     do
         echo 
-        echo "\"$invidious/watch?v=$line\" $input --track=$count" | xargs -o sh -c 'source "$1/yap.sh"; yap "${@:2}"' _  $YAP_PATH
+        echo "\"$invidious/watch?v=$line\" $input --track=$count" | xargs -o sh -c 'yap "${@}"' _
         let count=count+1
     done < <(printf '%s\n' "$ids")
 
@@ -493,3 +493,4 @@ yap_apple_music_playlist(){
     done < /tmp/apple_playlist_content.txt
 }
 
+yap "$@"
