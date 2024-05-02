@@ -53,6 +53,10 @@ Automatically edit audio tags with given info:
 ```
 yap "[LINK/SEARCH]" -t
 ```
+### Spotify Download
+Downloading spotify playlists is still in development,
+but one could use [spotDL](https://github.com/spotDL/spotify-downloader) for that purpose.
+
 
 
 
