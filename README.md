@@ -10,7 +10,7 @@ Download Audio from Invidious by link or automatic search by song name.
 ### Dependencies
 - curl
 - ffmpeg
-- [tageditor](https://github.com/Martchus/tageditor?tab=readme-ov-file)
+- [tageditor-cli](https://github.com/Martchus/tageditor?tab=readme-ov-file)
 
 ### Setup
 **AUR**:
