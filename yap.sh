@@ -180,7 +180,7 @@ yap(){
     # invidious instance
     local invidious=https://yt.artemislena.eu
     # temporary files path
-    local tmp='/tmp/yap'
+    local tmp="/tmp/yap-$$"
     # max retry count
     local MAX_TRYS=3
 
@@ -406,7 +406,7 @@ yap(){
         fi
     fi
 
-    [ -f "$tmp" ] && rmdir "$tmp"
+    [ -d "$tmp" ] && rm -r "$tmp"
 
     if [[ "$play" != '' ]]; then
         echo -e "\nExecuting $play"
