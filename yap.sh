@@ -401,7 +401,9 @@ yap(){
         if [ $RC -ne 0 ]; then
             echo -e "Something went wrong when tagging!"
         fi
-        rm "$output/$file_name.m4a.bak"
+        if [[ -f "$output/$file_name.m4a.bak" ]]; then
+            rm "$output/$file_name.m4a.bak"
+        fi
     fi
 
     [ -f "$tmp" ] && rmdir "$tmp"
