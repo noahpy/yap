@@ -22,8 +22,6 @@ Clone this repository and enter it, then run:
 ```
 ./install.sh
 ```
-Replace .bashrc with your equivalent shell file.
-
 ### Usage
 One can either specify the audio to be downloaded via link or search term.
 If not specified, this program will derive song / artist name by itself 
