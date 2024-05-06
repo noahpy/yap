@@ -15,7 +15,7 @@ Download Audio from Invidious by link or automatic search by song name.
 ### Setup
 **AUR**:
 ```
-yay -S youtoube-audio-puller-git
+yay -S youtube-audio-puller-git
 ```
 **From source**:  
 Clone this repository and enter it, then run:
