@@ -21,6 +21,7 @@ Options:
   -v, --interactive       Run everything interactively.
       --invidious=LINK    Specify invidious instace (default: https://yt.artemislena.eu)
       --track=NUM         Specify track number
+  --version               Show version
   -h, --help              Show this help message.
 
   
@@ -31,6 +32,12 @@ Examples:
   yap -l "https://www.youtube.com/watch?v=VIDEO_ID" -o "custom_output"
 EOM
 )
+
+VERSION="1.0.1"
+
+VERSION_MSG="\033[0;36m\033[1myoutube-audio-puller (yap) $VERSION\033[0m
+Noah Schlenker"
+
 
 # Download .m4a of specified video
 audio_download_invidious(){
@@ -185,7 +192,7 @@ yap(){
     local MAX_TRYS=3
 
     
-    local LONGOPTS="itag:,cover,link:,song:,album:,artist:,tag,output:,replace,help,play:,interactive,invidious:,track:"
+    local LONGOPTS="itag:,cover,link:,song:,album:,artist:,tag,output:,replace,help,play:,interactive,invidious:,track:,version"
     local OPTIONS="i:,c,l:,s:,a:,p:,t,o:,r,h,v"
 
     ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
@@ -262,6 +269,10 @@ yap(){
             -v|--interactive)
                 interactive=true
                 shift
+                ;;
+            --version)
+                echo -e "$VERSION_MSG"
+                return 0
                 ;;
             --play)
                 play="$2"
