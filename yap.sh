@@ -21,7 +21,7 @@ Options:
   -v, --interactive       Run everything interactively.
       --invidious=LINK    Specify invidious instace (default: https://yt.artemislena.eu)
       --track=NUM         Specify track number
-  --version               Show version
+      --version           Show version
   -h, --help              Show this help message.
 
   
