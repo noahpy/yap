@@ -1,6 +1,15 @@
 # YAP (Youtube Audio Puller)
 Download Audio from Invidious by link or automatic search by song name.
 
+### Table of Contents
+
+- [Functionality](#functionality)
+- [Dependencies](#dependencies)
+- [Setup](#setup)
+- [Usage](#usage)
+- [Recommended invidious server + itag](#recommended-invidious-server-itag)
+- [Spotify Download](#spotify-download)
+
 ### Functionality
 - Download audio by Invidious / YouTube link
 - Download audio by search term
@@ -56,6 +65,13 @@ Automatically edit audio tags with given info:
 ```
 yap "[LINK/SEARCH]" -t
 ```
+
+### Recommended invidious server + itag
+As of October 2024, the default server and itag seem to have some problems. Instead, use `yap` with:
+```
+yap "[INPUT]" --invidious="https://inv.nadeko.net" -i 140
+```
+
 ### Spotify Download
 Downloading spotify playlists is still in development,
 but one could use [spotDL](https://github.com/spotDL/spotify-downloader) for that purpose.
